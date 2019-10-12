@@ -1,10 +1,9 @@
 //Interface Protocolo ligacao de dados-Aplicacao
 //Funcoes implementadas 
 
+#pragma once
+
 #include "data_Macros.h"
-
-
-enum openAS {TRANSMITTER, RECEIVER};
 
 int llopen(int porta, enum openAS modoAbertura);
 // argumentos
