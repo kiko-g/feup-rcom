@@ -36,7 +36,7 @@ int main(int argc, char** argv)
     // READ & SEND INFORMATION
 
     //END COMMUNICATION
-      if (llclose(fd) == -1)
+      if (llclose(fd, TRANSMITTER) == -1)
       return 1;
 
     sleep(1);
