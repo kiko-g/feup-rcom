@@ -1,8 +1,12 @@
-xpto: app
+xpto: sender receiver
 
-app:
-	gcc -Wall -o app app.c data.c
+sender:
+	gcc -Wall -o sender sender.c data.c state_machine.c
+
+receiver:
+	gcc -Wall -o receiver receiver.c data.c state_machine.c
 
 clean:
 	-rm -f *.o
-	-rm -f app
+	-rm -f user
+	-rm -f server

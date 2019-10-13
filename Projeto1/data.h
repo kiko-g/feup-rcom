@@ -31,7 +31,7 @@ int llread(int fd, char * buffer);
 // (número de caracteres lidos)
 // – valor negativo em caso de erro
 
-int llclose(int fd);
+int llclose(int fd, enum openAS modoAbertura);
 // argumentos
 // – fd: identificador da ligação de dados
 // retorno
