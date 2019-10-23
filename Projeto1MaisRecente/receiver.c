@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     if ((argc < 3) ||
         ((strcmp("/dev/ttyS0", argv[1]) != 0) &&
          (strcmp("/dev/ttyS1", argv[1]) != 0) &&
-         (strcmp("/dev/pts/1", argv[1]) != 0)))
+         (strcmp("/dev/pts/3", argv[1]) != 0)))
     {
         printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1 newFileName\n");
         exit(1);
@@ -51,7 +51,8 @@ int main(int argc, char **argv)
 
     // Get Start Control Package
     llread_return_value = llread(fd, buffer);
-    printf("Buffer read: %s\n", buffer);
+    for (int i = 0; i < strlen(buffer); i++)
+        printf("Buffer element %d: %x\n", i, buffer[i]);
 
     do
     {
@@ -59,7 +60,10 @@ int main(int argc, char **argv)
 
         // Data that matters
         if (llread_return_value > 0)
-            printf("Buffer read: %s\n", buffer);
+        {
+            for (int i = 0; i < strlen(buffer); i++)
+                printf("Buffer element %d: %x\n", i, buffer[i]);
+        }
 
         if (llread_return_value == -1)
             return 1;

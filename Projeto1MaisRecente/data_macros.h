@@ -33,4 +33,4 @@ enum openAS {TRANSMITTER, RECEIVER};
 #define xorESCAPE 0x5d
 
 //Max length of a string
-#define MAX_LEN 256
+#define MAX_LEN 1024

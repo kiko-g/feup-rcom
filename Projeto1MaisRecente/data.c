@@ -372,8 +372,8 @@ int llread(int fd, char *buffer)
 
       printf("RR sent\n");
 
-      strncpy(buffer, data, MAX_LEN - 1);
-      buffer[MAX_LEN - 1] = 0;
+      strncpy(buffer, data, strlen(data) - 1);
+      buffer[strlen(data) - 1] = 0;
 
       Nr++;
     }
