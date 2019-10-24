@@ -304,6 +304,7 @@ int llwrite(int fd, char *buffer, int length)
   } while (!tramaSent);
 
   Ns++;
+
   return length;
 }
 
@@ -312,6 +313,7 @@ int llread(int fd, char *buffer)
   // RECEIVE I
   unsigned char byte;
   int state = Start;
+  size_t dataSize = 0;
 
   char data[MAX_LEN] = "";
 
@@ -322,6 +324,7 @@ int llread(int fd, char *buffer)
     if (state == DATA && byte != FLAG)
     {
       append(data, byte);
+      dataSize++;
     }
 
     if ((Nr % 2) == 1)
@@ -340,12 +343,10 @@ int llread(int fd, char *buffer)
     return 0;
   else
   {
-    printf("Data Received nr %d: %s\n", Nr, data);
-
     // Dar destuffing da data
     size_t dataNewSize = 0;
 
-    char *dataDeStuffed = deStuff(data, strlen(data), &dataNewSize);
+    char *dataDeStuffed = deStuff(data, dataSize, &dataNewSize);
 
     char BCC2Received = dataDeStuffed[dataNewSize - 1];
 
@@ -372,8 +373,8 @@ int llread(int fd, char *buffer)
 
       printf("RR sent\n");
 
-      strncpy(buffer, data, strlen(data) - 1);
-      buffer[strlen(data) - 1] = 0;
+      strncpy(buffer, data, dataNewSize - 1);
+      buffer[dataNewSize - 1] = 0;
 
       Nr++;
     }
@@ -398,7 +399,7 @@ int llread(int fd, char *buffer)
       printf("REJ sent\n");
     }
 
-    return sizeof(data) - 1;
+    return dataNewSize - 1;
   }
 }
 

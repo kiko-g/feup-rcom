@@ -51,19 +51,14 @@ int main(int argc, char **argv)
 
     // Get Start Control Package
     llread_return_value = llread(fd, buffer);
-    for (int i = 0; i < strlen(buffer); i++)
-        printf("Buffer element %d: %x\n", i, buffer[i]);
 
     do
     {
         llread_return_value = llread(fd, buffer);
 
-        // Data that matters
         if (llread_return_value > 0)
-        {
-            for (int i = 0; i < strlen(buffer); i++)
-                printf("Buffer element %d: %x\n", i, buffer[i]);
-        }
+            for (int i = 0; i < llread_return_value; i++)
+                printf("Char: %x\n", buffer[i]);
 
         if (llread_return_value == -1)
             return 1;
