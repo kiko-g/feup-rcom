@@ -9,8 +9,6 @@
 #include <netinet/in.h>
 
 
-
-
 int checkUsage(int n, char* str);
 int main(int argc, char **argv)
 {

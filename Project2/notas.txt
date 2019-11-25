@@ -7,15 +7,11 @@
 quisermos repor as configuracoes guardadas no ficheiro.
     # > copy flash:<filename> running-config
 
-
-
-
-enable
-8nortel
-
-
-gnu / tux, bancada 6
-
+===============================
+            enable
+            8nortel
+===============================
+       gnu/tux, bancada 6
 ===============================
 MUDAR DE TUX
 SCROLL LOCK x2 + NUMBER + ENTER
