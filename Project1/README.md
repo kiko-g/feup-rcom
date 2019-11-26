@@ -1,5 +1,9 @@
-# RCOM 2019/2020
+## RCOM 2019/2020
 
-### PROJECT 1
+### **Pratical work 1**
 
-> ***Project 1 folder has the final project and also the sender and receiver versions (backups)***
+<span style="color:#23355d">**Brief description**: </span>
+Transfering files between two computers using a serial port   
+
+<span style="color:#23355d">**Reminder**: </span>
+Contains final project and also the sender and receiver slightly altered versions, which are essentially backups.
