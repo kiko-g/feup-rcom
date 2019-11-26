@@ -22,6 +22,8 @@ int parse_URL(url_t* url, const char* url_string)
     return 0;
 }
 
+
+
 int getIpByHost(url_t* url)
 {
 	struct hostent* h;
