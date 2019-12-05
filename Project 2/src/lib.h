@@ -11,56 +11,100 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-// ---------------------------------------------------
-#define SERVER_PORT 6000
-#define SERVER_ADDR "192.168.28.96"
-// ---------------------------------------------------
-typedef char string[256];
+// ----------------------------------
+#define MAX_SIZE 2048
+#define READY 220
+#define LOGGED_IN 230
+#define FILE_STATUS_OK 150
+#define PASSWORD_REQUIRED 331
+#define ENTERED_PASV_MODE 227
+#define CLOSE_DATA_CONNECTION 226
+#define CLOSE_CONTROL_CONNECTION 221
+// ----------------------------------
+typedef struct FTP
+{
+    int max_size;
+    int sockfd;
+    int datafd;
+    int server_port;
+    int data_server_port;
+    int authenticate;
+    char* server_addr;
+    char* data_server_addr;
 
-
-// ---------------------------------------------------
-// ---------------        URL        -----------------
-// ---------------------------------------------------
+} ftp_t;
+// ----------------------------------
 typedef struct URL
 {
-    string ip;       // IP adress string
-    string host;     // host string
-    string path;     // path string
-    string user;     // user string
-    string password; // password string
-    string filename; // filename string
-    int port;
+    char host[256];
+    char username[256];
+    char password[256];
+    char filepath[256];
+
 } url_t;
 
+/*-----------------------------------
+------- Function declarations -------
+-----------------------------------*/
 
-/** @brief initialize URL struct with default values
- *  @return the initialized URL struct object */
-url_t init_URL();
+/** 
+ * @brief parse initial information
+ * @param argc number of arguments
+ * @param argv string array in executable call
+ */
+void parse(int argc, char *argv[]);
 
 
 /** 
- * @brief parses URL information into url param fields
- * @return 0 upon success, non-zero otherwise */
-int parse_URL(url_t* url, const char* url_string);
+ * @brief check executable call usage (must have 2 args (n should be 2))
+ * @param n number of arguments
+ * @param s string provided in executable called
+ * @return 0 upon success, 1 otherwise 
+ */
+int check_usage(int n, char *s);
 
 
 /** 
- * @brief gets IP by hostname
- * @return 0 upon success, non-zero otherwise */
-int getIP_by_hostname(url_t* url); // gets an IP by host name
+ * @brief send ftp message
+ * @param server_addr
+ * @param data
+ * @return 0 upon success, 1 otherwise 
+ */
+int send_msg(int fd, char* msg);
 
 
+/** 
+ * @brief receive ftp message
+ * @param server_addr
+ * @param data
+ * @return 0 upon success, 1 otherwise 
+ */
+int receive_msg(int fd, char* msg);
 
 
-// ---------------------------------------------------
-// ---------------        FTP        -----------------
-// ---------------------------------------------------
-typedef struct FTP {
-    int control_socket_fd; // control socket file descriptor
-    int data_socket_fd;    // data socket file descriptor
-} ftp_t;
+/** 
+ * @brief 
+ * @param server_addr
+ * @param data
+ * @return 0 upon success, 1 otherwise 
+ */
+int download_file(int fd, char* filename);
 
 
-int read_FTP(ftp_t* ftp, char* s);
-int connect_FTP(ftp_t* ftp, int port, const char* ip);
-static int connect_socket(int port, const char* ip);
+/** 
+ * @brief connect data to the server address
+ * @param server_addr
+ * @param data
+ * @return 0 upon success, 1 otherwise
+ */
+int connect_data(struct sockaddr_in* server_addr, char data[][MAX_SIZE]);
+
+
+/** 
+ * @brief dismantle __ strings with tokens
+ * @param buf 
+ * @param data 
+ * @param tokens contains 3 token charecters to dismantle strings
+ * @return 0 upon success, 1 otherwise 
+ */
+int dismantle(char *buf, char data[][MAX_SIZE], char tokens[3]);

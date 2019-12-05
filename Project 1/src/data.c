@@ -16,6 +16,7 @@ enum openAS modo;
 int Ns = 0, Nr = 1;
 int disconnect;
 int dataTransferOver = FALSE;
+int TramaAlreadyReceived = FALSE;
 
 // ALARME
 int flag = FALSE, conta = 1;
@@ -87,8 +88,8 @@ int llopen(char *porta, enum openAS modoAbertura)
       printf("SET sent\n");
 
       alarm(3);
-
       flag = FALSE;
+
       int state = Start;
 
       while (state != STOP && !flag)
@@ -98,9 +99,8 @@ int llopen(char *porta, enum openAS modoAbertura)
       }
     } while (flag && conta < 4);
 
-
-
-    if (flag && conta == 4) return -1;
+    if (flag && conta == 4)
+      return -1;
     else
     {
       printf("UA received\n");
@@ -119,7 +119,7 @@ int llopen(char *porta, enum openAS modoAbertura)
     newtio.c_iflag = IGNPAR;
 
     newtio.c_oflag = 0;
-    newtio.c_lflag = 0;     /* set input mode (non-canonical, no echo,...) */
+    newtio.c_lflag = 0; /* set input mode (non-canonical, no echo,...) */
 
     newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
     newtio.c_cc[VMIN] = 1;  /* blocking read until 5 chars received */
@@ -152,7 +152,8 @@ int llopen(char *porta, enum openAS modoAbertura)
 
     printf("UA sent\n");
   }
-  else return -1;
+  else
+    return -1;
 
   return fd;
 }
@@ -241,7 +242,8 @@ int llclose(int fd)
     }
     return fd;
   }
-  else return -1;
+  else
+    return -1;
 }
 
 int llwrite(int fd, char *buffer, int length)
@@ -347,10 +349,6 @@ int llwrite(int fd, char *buffer, int length)
   return length;
 }
 
-
-
-
-
 int llread(int fd, char *buffer)
 {
   // RECEIVE I
@@ -358,31 +356,59 @@ int llread(int fd, char *buffer)
   int state = Start;
   char data[MAX_LEN] = "";
   size_t dataSize = 0;
+  int nrByteReceived = 0;
+  int descartarTrama = FALSE;
+
+  //printf("Waiting for Trama with Ns: %d\n", Nr - 1);
 
   while (state != STOP)
   {
     read(fd, &byte, 1); // read byte
+    nrByteReceived++;
 
-    if (state == DATA && byte != FLAG){
-        data[dataSize] = byte;
-        dataSize++;
+    if (state == DATA && byte != FLAG)
+    {
+      data[dataSize] = byte;
+      dataSize++;
     }
 
-    if((Nr % 2) == 1) handleStateOfTransmissionReceiver(&state, byte, C_Ns0);
-    else handleStateOfTransmissionReceiver(&state, byte, C_Ns1);
+    if (nrByteReceived == 3)
+    {
+      if (((Nr % 2) == 1) && byte == C_Ns1)
+        descartarTrama = TRUE;
+      else if (((Nr % 2) == 0) && byte == C_Ns0)
+        descartarTrama = TRUE;
+    }
 
+    if (descartarTrama)
+    {
+      if ((Nr % 2) == 1)
+        handleStateOfTransmissionReceiver(&state, byte, C_Ns1);
+      else
+        handleStateOfTransmissionReceiver(&state, byte, C_Ns0);
+    }
+    else
+    {
+      if ((Nr % 2) == 1)
+        handleStateOfTransmissionReceiver(&state, byte, C_Ns0);
+      else
+        handleStateOfTransmissionReceiver(&state, byte, C_Ns1);
+    }
 
-    if (dataTransferOver){
-        if (byte == C_DISC){
+    if (dataTransferOver)
+    {
+      if (byte == C_DISC)
+      {
         disconnect = 1;
         printf("DISC received\n");
       }
-      else printf("# FINAL BYTE: 0x%02x\n", byte);
-
+      else
+        printf("# FINAL BYTE: 0x%02x\n", byte);
     }
   }
 
-  if (disconnect == 1) return 0;
+  if (disconnect == 1)
+    return 0;
   else
   {
     // destuffing data
@@ -394,6 +420,7 @@ int llread(int fd, char *buffer)
     // Se BCC2 valid
     if (BCC2Received == BCC2Calculated)
     {
+      //printf("Data size: %ld\n", dataNewSize);
       // enviar RR
       unsigned char RR[5];
       RR[0] = FLAG;
@@ -411,18 +438,43 @@ int llread(int fd, char *buffer)
       for (size_t i = 0; i < 5; i++)
         write(fd, &RR[i], 1);
 
-      printf("RR sent\t [NR: %d]\n", Nr);
+      //printf("RR sent\t [NR: %d]\n\n", Nr);
 
-      for (int i = 0; i < dataNewSize - 1; i++)
-        buffer[i] = dataDeStuffed[i];
+      if (descartarTrama != TRUE)
+      {
+        Nr++;
 
-      if (buffer[0] == '3')
-        dataTransferOver = TRUE;
+        if (!TramaAlreadyReceived)
+        {
+          printf("TRAMA RECEIVED\n");
 
-      Nr++;
-	  return dataNewSize - 1;
+          for (int i = 0; i < dataNewSize - 1; i++)
+          {
+            buffer[i] = dataDeStuffed[i];
+            printf("%x |", buffer[i]);
+          }
+
+          printf("\n\n");
+
+          if (buffer[0] == '3')
+            dataTransferOver = TRUE;
+
+          TramaAlreadyReceived = FALSE;
+          return dataNewSize - 1;
+        }
+        else
+        {
+          TramaAlreadyReceived = FALSE;
+          return -2;
+        }
+      }
+      else
+      {
+        TramaAlreadyReceived = TRUE;
+        Nr--;
+        return -2;
+      }
     }
-
     else
     {
       // enviar REJ
@@ -441,23 +493,17 @@ int llread(int fd, char *buffer)
       for (size_t i = 0; i < 5; i++)
         write(fd, &REJ[i], 1);
 
-      printf("REJ sent [NR: %d]\n", Nr);
-	  return REJ_SENT;
+      //printf("REJ sent [NR: %d]\n", Nr);
+      return REJ_SENT;
     }
-
-
   }
 }
 
-
-
-
-
 void append(char *s, unsigned char c)
 {
-    int len = strlen(s);
-    s[len] = c;
-    s[len + 1] = '\0';
+  int len = strlen(s);
+  s[len] = c;
+  s[len + 1] = '\0';
 }
 
 char *stuff(const char *dados, size_t currentSize, size_t *newSize, unsigned char *BCC2)
@@ -597,7 +643,8 @@ unsigned char *deStuffBCC2(const unsigned char *BCC2)
 char calcBCC2(const char *dados, size_t currentSize)
 {
   char BCC2 = dados[0];
-  for (size_t i = 1; i < currentSize; i++) BCC2 ^= dados[i];
+  for (size_t i = 1; i < currentSize; i++)
+    BCC2 ^= dados[i];
 
   return BCC2;
 }
