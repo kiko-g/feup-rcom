@@ -1,12 +1,14 @@
 #pragma once
 #include <stdio.h>
-#include <errno.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/stat.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -48,20 +50,20 @@ typedef struct URL
 -----------------------------------*/
 
 /** 
- * @brief parse initial information
- * @param argc number of arguments
- * @param argv string array in executable call
- */
-void parse(int argc, char *argv[]);
-
-
-/** 
  * @brief check executable call usage (must have 2 args (n should be 2))
  * @param n number of arguments
  * @param s string provided in executable called
  * @return 0 upon success, 1 otherwise 
  */
 int check_usage(int n, char *s);
+
+
+/** 
+ * @brief parse initial information
+ * @param argc number of arguments
+ * @param argv string array in executable call
+ */
+void parse(int argc, char *argv[]);
 
 
 /** 

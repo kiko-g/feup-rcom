@@ -2,6 +2,25 @@
 ftp_t ftp;
 url_t url;
 
+void parse(int argc, char *argv[])
+{
+    if (sscanf(argv[1], "ftp://%[^:]%*[:]%[^@]%*[@]%[^/]%*[/]%s", url.username, url.password, url.host, url.filepath) == 4){
+        ftp.authenticate = 1;
+        printf("\nUsername: [%s]\nHost: [%s]\nFilepath: [%s]\n\n", url.username, url.host, url.filepath);
+    }
+
+    else if (sscanf(argv[1], "ftp://%[^/]%*[/]%s", url.host, url.filepath) == 2){
+        ftp.authenticate = 0;
+        printf("Warning: Couldn't parse any authentication\n\n");
+        printf("Host: [%s]\nFilepath: [%s]\n\n", url.host, url.filepath);
+    }
+    else
+    {
+        printf("Error while trying to parse url\n");
+        exit(1);
+    }
+}
+
 
 int receive_msg(int fd, char* msg)
 {
@@ -10,7 +29,7 @@ int receive_msg(int fd, char* msg)
     printf("< Received: %s\n", msg);
     return atoi(msg);
 }
-// ----------------------------------------
+
 
 int send_msg(int fd, char *msg)
 {
@@ -18,7 +37,7 @@ int send_msg(int fd, char *msg)
     int r = write(fd, msg, strlen(msg));
     return r;
 }
-// ----------------------------------------
+
 
 int connect_data(struct sockaddr_in* server_addr, char data[][MAX_SIZE])
 {
@@ -61,17 +80,17 @@ int connect_data(struct sockaddr_in* server_addr, char data[][MAX_SIZE])
 
     return ftp.datafd;
 }
-// ----------------------------------------
+
 
 int dismantle(char* buf, char data[][MAX_SIZE], char tokens[3])
 {
+    //tokens[0] = (
+    //tokens[1] = )
+    //tokens[2] = ,
 	int i=0, j=0, k=0;
-    char init  = tokens[0]; // open bracket
-    char end   = tokens[1]; // close bracket
-    char split = tokens[2]; // comma
-  
-	for(i=0; i < MAX_SIZE; i++)
-        if(buf[i] == init) {
+
+    for(i=0; i < MAX_SIZE; i++)
+        if(buf[i] == tokens[0]) {
            i++;    //next position after
            break;  //leave cycle upon init char found
         }
@@ -79,23 +98,40 @@ int dismantle(char* buf, char data[][MAX_SIZE], char tokens[3])
 
     for(j=0; i < MAX_SIZE && j < MAX_SIZE; i++, j++) //split
     {
-		if(buf[i] == split)
+		if(buf[i] == tokens[2])
         {
 			data[k][j] = 0;
 			j = 0;
 			k++;
-			continue; //skip when split
+			continue; 
+            //skip when split character is found
 		}
         //leave cycle upon end char found
-		if(buf[i] == end) break; 
+		if(buf[i] == tokens[1]) break; 
 		data[k][j] = buf[i];
 	}
 
 	return 0;
 }
-// ----------------------------------------
+
 
 int download_file(int fd, char *filename)
 {
-    
+	int bytes;
+	int file = open(filename, O_WRONLY | O_APPEND | O_CREAT | O_EXCL, 0666);
+
+	while(bytes > 0)
+    {
+		char buf[MAX_SIZE];
+        bzero(buf, MAX_SIZE);
+
+        if ((bytes = read(fd, buf, MAX_SIZE)) < 0)
+            printf("Error while reading file from server");
+
+        if (write(file, buf, bytes) < 0)
+            printf("Error while writing to file\n");
+	}
+
+	return 0;    
 }
+

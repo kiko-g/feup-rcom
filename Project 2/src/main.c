@@ -6,19 +6,19 @@ extern url_t url;
 
 int main(int argc, char* argv[])
 {
-	int	bytes;
 	char msg[MAX_SIZE];
 	char read_buf[MAX_SIZE];
 	char write_buf[MAX_SIZE];
 	struct hostent *h;
-	struct sockaddr_in server_addr, data_server_addr;
+	struct sockaddr_in server_addr; //address of server
+    struct sockaddr_in data_server; //address of data server
 
     if(check_usage(argc, argv[0])) return -1;
     parse(argc, argv);
 	ftp.server_port = 21;
 
 
-    if((h=gethostbyname(url.host)) == NULL) {
+    if((h = gethostbyname(url.host)) == NULL) {
         herror("gethostbyname()");
         return 0;
     } 
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 	char reply_buf[6][MAX_SIZE];
     char tokens[3] = "(),";
 	dismantle(read_buf, reply_buf, tokens);
-	connectToData(reply_buf, &data_server_addr);
+	connect_data(reply_buf, &data_server);
 
 	strcpy(msg, "RETR ");
 	strcat(msg, url.filepath);
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
 	if(send_msg(msg, ftp.sockfd) <= 0) return 1;
 	if(receive_msg(read_buf,ftp.sockfd) != FILE_STATUS_OK) return 1;
 	
-	downloadFile(ftp.datafd,url.filepath);
+	download_file(ftp.datafd,url.filepath);
 
     //closing connection
 	if(receive_msg(read_buf,ftp.sockfd) != CLOSE_DATA_CONNECTION) return 1;
