@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <stdbool.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -14,14 +15,24 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 // ----------------------------------
-#define MAX_SIZE 2048
-#define READY 220
+#define MAX_SIZE 1024
+#define PASSWORD_MAX_LENGTH 100
+// ----------------------------------
 #define LOGGED_IN 230
+#define SERVER_READY 220
 #define FILE_STATUS_OK 150
 #define PASSWORD_REQUIRED 331
 #define ENTERED_PASV_MODE 227
-#define CLOSE_DATA_CONNECTION 226
+#define TRASNFER_COMPLETE 226
 #define CLOSE_CONTROL_CONNECTION 221
+// ----------------------------------
+typedef struct URL
+{
+    char host[256];
+    char username[256];
+    char password[256];
+    char filepath[256];
+} url_t;
 // ----------------------------------
 typedef struct FTP
 {
@@ -30,20 +41,10 @@ typedef struct FTP
     int datafd;
     int server_port;
     int data_server_port;
-    int authenticate;
+    bool authenticate;
     char* server_addr;
     char* data_server_addr;
-
 } ftp_t;
-// ----------------------------------
-typedef struct URL
-{
-    char host[256];
-    char username[256];
-    char password[256];
-    char filepath[256];
-
-} url_t;
 
 /*-----------------------------------
 ------- Function declarations -------
@@ -62,8 +63,9 @@ int check_usage(int n, char *s);
  * @brief parse initial information
  * @param argc number of arguments
  * @param argv string array in executable call
+ * @return 0 upon success, 1 otherwise 
  */
-void parse(int argc, char *argv[]);
+int parse(int argc, char *argv[]);
 
 
 /** 

@@ -13,8 +13,8 @@ int main(int argc, char* argv[])
 	struct sockaddr_in server_addr; //address of server
     struct sockaddr_in data_server; //address of data server
 
-    if(check_usage(argc, argv[0])) return -1;
-    parse(argc, argv);
+    if(check_usage(argc, argv[0])) return 1;
+    if(parse(argc, argv)) return 1;
 	ftp.server_port = 21;
 
 
@@ -47,9 +47,9 @@ int main(int argc, char* argv[])
 	}
 
     //continue if ready 
-	if(receive_msg(read_buf,ftp.sockfd) != READY) return 1;
+	if(receive_msg(read_buf,ftp.sockfd) != SERVER_READY) return 1;
 
-    //
+
 	if(ftp.authenticate)
     {
 		strcpy(msg,"USER ");
@@ -67,11 +67,15 @@ int main(int argc, char* argv[])
 		if(receive_msg(read_buf,ftp.sockfd) != LOGGED_IN) return 1;
 	}
 
+
 	if(send_msg("PASV\n",ftp.sockfd) <= 0) return 1;
 	if(receive_msg(read_buf,ftp.sockfd) != ENTERED_PASV_MODE) return 1;
 
-	char reply_buf[6][MAX_SIZE];
-    char tokens[3] = "(),";
+	
+    char reply_buf[6][MAX_SIZE];
+    char tokens[3];
+    tokens[0] = '('; tokens[1] = ')'; tokens[2] = ',';
+
 	dismantle(read_buf, reply_buf, tokens);
 	connect_data(reply_buf, &data_server);
 
@@ -85,7 +89,7 @@ int main(int argc, char* argv[])
 	download_file(ftp.datafd,url.filepath);
 
     //closing connection
-	if(receive_msg(read_buf,ftp.sockfd) != CLOSE_DATA_CONNECTION) return 1;
+	if(receive_msg(read_buf,ftp.sockfd) != TRASNFER_COMPLETE) return 1;
 	if(send_msg("QUIT\n",ftp.sockfd) <= 0) return 1;
 	if(receive_msg(read_buf,ftp.sockfd) != CLOSE_CONTROL_CONNECTION) return 1;
 

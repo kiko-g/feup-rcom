@@ -2,23 +2,50 @@
 ftp_t ftp;
 url_t url;
 
-void parse(int argc, char *argv[])
+
+//n is argc and s is argv[0]
+int check_usage(int n, char* s)
 {
-    if (sscanf(argv[1], "ftp://%[^:]%*[:]%[^@]%*[@]%[^/]%*[/]%s", url.username, url.password, url.host, url.filepath) == 4){
-        ftp.authenticate = 1;
-        printf("\nUsername: [%s]\nHost: [%s]\nFilepath: [%s]\n\n", url.username, url.host, url.filepath);
+    if(n!=2)
+    {
+        printf("\nWrong executable call (number of arguments must be 2)\n\n");
+        printf("NORMAL\t\t%s ftp://[<user>:<password>@]<host>/<url_path>\n", s);
+        printf("ANONYMOUS\t%s ftp://<host>/<url_path>\n\n\n", s);
+        return 1;
+    }
+    return 0;
+}
+
+
+int parse(int argc, char *argv[])
+{
+    if (sscanf(argv[1], "ftp://%[^:]%*[:]%[^@]%*[@]%[^/]%*[/]%s", url.username, url.password, url.host, url.filepath) == 4)
+    {
+        ftp.authenticate = true;
+        char hidden_pass[PASSWORD_MAX_LENGTH] = "";
+        for(int i=0; i < strlen(url.password); ++i) strcat(hidden_pass, "*");
+
+        printf("Parsed url and authentication\n\n");
+        printf("Username:  %s\n", url.username);
+        printf("Password:  %s\n", hidden_pass);
+        printf("Host:      %s\n", url.host);
+        printf("Filepath:  %s\n\n", url.filepath);
     }
 
-    else if (sscanf(argv[1], "ftp://%[^/]%*[/]%s", url.host, url.filepath) == 2){
-        ftp.authenticate = 0;
-        printf("Warning: Couldn't parse any authentication\n\n");
-        printf("Host: [%s]\nFilepath: [%s]\n\n", url.host, url.filepath);
-    }
-    else
+    else if (sscanf(argv[1], "ftp://%[^/]%*[/]%s", url.host, url.filepath) == 2)
     {
-        printf("Error while trying to parse url\n");
-        exit(1);
+        ftp.authenticate = false;
+        printf("Parsed url with no authentication\n\n");
+        printf("Host:      %s\n", url.host);
+        printf("Filepath:  %s\n\n", url.filepath);
     }
+
+    else{
+        printf("Error while trying to parse url and/or authentication\n");
+        return 1;
+    }
+
+    return 0;
 }
 
 
@@ -26,7 +53,7 @@ int receive_msg(int fd, char* msg)
 {
     bzero(msg, MAX_SIZE);
     read(fd, msg, MAX_SIZE);
-    printf("< Received: %s\n", msg);
+    printf("> Received: %s\n", msg);
     return atoi(msg);
 }
 
@@ -41,17 +68,16 @@ int send_msg(int fd, char *msg)
 
 int connect_data(struct sockaddr_in* server_addr, char data[][MAX_SIZE])
 {
-    char div = ".";
     ftp.data_server_addr = malloc(MAX_SIZE);
     bzero(ftp.data_server_addr, MAX_SIZE);
 
-    //build server address string
+    //build server address string using "." division
     strcpy(ftp.data_server_addr, data[0]);
-    strcat(ftp.data_server_addr, div);
+    strcat(ftp.data_server_addr, ".");
     strcat(ftp.data_server_addr, data[1]);
-    strcat(ftp.data_server_addr, div);
+    strcat(ftp.data_server_addr, ".");
     strcat(ftp.data_server_addr, data[2]);
-    strcat(ftp.data_server_addr, div);
+    strcat(ftp.data_server_addr, ".");
     strcat(ftp.data_server_addr, data[3]);
 
     ftp.data_server_port = (atoi(data[4]) * 0x100) + atoi(data[5]);
