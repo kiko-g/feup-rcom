@@ -5,7 +5,6 @@
 #include <strings.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <signal.h>
@@ -14,59 +13,67 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-// ----------------------------------
+// ------------- MACROS -------------
 #define MAX_SIZE 1024
-#define PASSWORD_MAX_LENGTH 100
-// ----------------------------------
-#define LOGGED_IN 230
-#define SERVER_READY 220
-#define FILE_STATUS_OK 150
-#define PASSWORD_REQUIRED 331
-#define ENTERED_PASV_MODE 227
-#define TRASNFER_COMPLETE 226
-#define CLOSE_CONTROL_CONNECTION 221
-// ----------------------------------
+#define URL_STRLEN 256
+// ------------- TYPES --------------
 typedef struct URL
 {
-    char host[256];
-    char username[256];
-    char password[256];
-    char filepath[256];
+    char ip[URL_STRLEN];
+    char host[URL_STRLEN];
+    char username[URL_STRLEN];
+    char password[URL_STRLEN];
+    char filepath[URL_STRLEN];
+    char filename[URL_STRLEN];
+    int port;
 } url_t;
 // ----------------------------------
 typedef struct FTP
 {
-    int max_size;
-    int sockfd;
-    int datafd;
-    int server_port;
-    int data_server_port;
-    bool authenticate;
-    char* server_addr;
-    char* data_server_addr;
+    int control_socket_fd;
+    int data_socket_fd;
 } ftp_t;
 
-/*-----------------------------------
-------- Function declarations -------
------------------------------------*/
+// -----------------------------------
+// ------- Function declarations -----
+// -----------------------------------
 
-/** 
+/**
  * @brief check executable call usage (must have 2 args (n should be 2))
  * @param n number of arguments
  * @param s string provided in executable called
  * @return 0 upon success, 1 otherwise 
  */
-int check_usage(int n, char *s);
+void print_usage(char* s);
 
+/** 
+ * @brief check executable call usage (must have 2 args (n should be 2))
+ * @param n number of arguments
+ * @param array of strings in executable call
+ * @return 0 upon success, 1 otherwise 
+ */
+int check_usage(int n, char** s);
 
 /** 
  * @brief parse initial information
- * @param argc number of arguments
  * @param argv string array in executable call
  * @return 0 upon success, 1 otherwise 
  */
-int parse(int argc, char *argv[]);
+int url_parser(url_t* url, char* link);
 
+/** 
+ * @brief check valid password
+ * @param pass url password
+ * @return 0 upon success
+ */
+int split_path(char* path, char* file);
+
+/** 
+ * @brief check valid password
+ * @param pass url password
+ * @return 0 upon success
+ */
+char* check_password(char* pass);
 
 /** 
  * @brief send ftp message
@@ -74,41 +81,73 @@ int parse(int argc, char *argv[]);
  * @param data
  * @return 0 upon success, 1 otherwise 
  */
-int send_msg(int fd, char* msg);
-
+int send_msg(ftp_t* ftp, const char* msg);
 
 /** 
  * @brief receive ftp message
  * @param server_addr
  * @param data
- * @return 0 upon success, 1 otherwise 
+ * @return 0 upon success
  */
-int receive_msg(int fd, char* msg);
+int receive_msg(ftp_t* ftp, char* msg);
 
+/** 
+ * @brief connect socket
+ * @param ftp ftp struct containing the File Descritors
+ * @return 0 upon success
+ */
+int connect_to_data(int port, const char* ip);
+
+/** 
+ * @brief connect
+ * @param ftp ftp struct containing the File Descritors
+ * @return 0 upon success
+ */
+int ftp_connect(int port, const char* ip, ftp_t* ftp);
+
+/** 
+ * @brief disconnect from server
+ * @param ftp ftp struct containing the File Descriptors
+ * @return 0 upon success
+ */
+int ftp_disconnect(ftp_t* ftp);
 
 /** 
  * @brief 
- * @param server_addr
- * @param data
- * @return 0 upon success, 1 otherwise 
+ * @param ftp ftp struct containing the File Descritors
+ * @param user login username string
+ * @param password login password
+ * @return 0 upon success
  */
-int download_file(int fd, char* filename);
-
+int login(ftp_t* ftp, const char* user, const char* password);
 
 /** 
- * @brief connect data to the server address
- * @param server_addr
- * @param data
- * @return 0 upon success, 1 otherwise
+ * @brief change to directory of the file
+ * @param ftp struct containing the File Descriptors
+ * @param path path to the directory of the file
+ * @return 0 upon success
  */
-int connect_data(struct sockaddr_in* server_addr, char data[][MAX_SIZE]);
-
+int ftp_cd(ftp_t* ftp, const char* path) ;
 
 /** 
- * @brief dismantle __ strings with tokens
- * @param buf 
- * @param data 
- * @param tokens contains 3 token charecters to dismantle strings
- * @return 0 upon success, 1 otherwise 
+ * @brief enter passive (pasv) mode
+ * @param ftp struct containing the File Descriptors
+ * @return 0 upon success
  */
-int dismantle(char *buf, char data[][MAX_SIZE], char tokens[3]);
+int ftp_pasv(ftp_t* ftp);
+
+/** 
+ * @brief 
+ * @param ftp struct containing the File Descritors
+ * @param filename name of the file to be transfered
+ * @return 0 upon success
+ */
+int ftp_retr(ftp_t* ftp, const char* filename);
+
+/** 
+ * @brief 
+ * @param ftp ftp struct containing the File Descritors
+ * @param filename name of file to be downloaded
+ * @return 0 upon success
+ */
+int ftp_write_file(ftp_t* ftp, const char* filename);
