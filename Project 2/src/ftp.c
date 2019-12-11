@@ -36,21 +36,23 @@ int url_parser(url_t* url, char* link)
     if (sscanf(link, "ftp://%[^:]%*[:]%[^@]%*[@]%[^/]%*[/]%s", url->username, url->password, url->host, url->filepath) == 4) 
     {
         split_path(url->filepath, url->filename);
-        printf("Parsed url and authentication (anonymous)\n\n");
+        printf("\n ====== Parsed url and authentication ======\n\n");
+        printf("User:      %s\n", url->username);
+        printf("Pass:      %s\n", url->password);
         printf("Host:      %s\n", url->host);
         printf("Path:      %s\n", url->filepath);
-        printf("Filename:  %s\n\n", url->filename);
+        printf("Filename:  %s\n", url->filename);
     }
 
     else if (sscanf(link, "ftp://%[^/]%*[/]%s", url->host, url->filepath) == 2)
     {
         split_path(url->filepath, url->filename);
         strcpy(url->username, "anonymous");
-        strcpy(url->password, ""); //will be altered
-        printf("Parsed url with no authentication\n\n");
+        strcpy(url->password, ""); //will be altered later
+        printf("\n=== Parsed url with no authentication (anonymous) ===\n\n");
         printf("Host:      %s\n", url->host);
         printf("Path:      %s\n", url->filepath);
-        printf("Filename:  %s\n\n", url->filename);
+        printf("Filename:  %s\n", url->filename);
     }
 
     else {
@@ -62,6 +64,7 @@ int url_parser(url_t* url, char* link)
     return 0;    
 }
 
+// -----------------------------------------------------------------
 int split_path(char* path, char* file)
 {
     strcpy(file, path);
@@ -85,6 +88,7 @@ int split_path(char* path, char* file)
 
     return 0;
 }
+
 // -----------------------------------------------------------------
 char* check_password(char* pass)
 {
@@ -106,7 +110,7 @@ char* check_password(char* pass)
 // -----------------------------------------------------------------
 int send_msg(ftp_t* ftp, const char* msg) 
 {
-	if ((write(ftp->control_socket_fd, msg, strlen(msg))) <= 0) {
+	if ((write(ftp->server_socket_fd, msg, strlen(msg))) <= 0) {
 		printf("Could not write (send_msg)\n");
 		return 1;
 	}
@@ -120,7 +124,7 @@ int send_msg(ftp_t* ftp, const char* msg)
 // -----------------------------------------------------------------
 int receive_msg(ftp_t* ftp, char* msg) 
 {
-	FILE* f = fdopen(ftp->control_socket_fd, "r");
+	FILE* f = fdopen(ftp->server_socket_fd, "r");
 
 	while(msg[0] < '1' || msg[0] > '5' || msg[3] != ' '){
 		memset(msg, 0, MAX_SIZE);
@@ -170,7 +174,7 @@ int ftp_connect(int port, const char* ip, ftp_t* ftp)
 		return 1;
 	}
 
-	ftp->control_socket_fd = fd;
+	ftp->server_socket_fd = fd;
 	ftp->data_socket_fd = 0;
 
 	if (receive_msg(ftp, read_buf)) {
@@ -186,13 +190,13 @@ int ftp_connect(int port, const char* ip, ftp_t* ftp)
 int login(ftp_t* ftp, const char* user, const char* password) 
 {
 	char login[MAX_SIZE];
-	sprintf(login, "USER %s\r\n", user);        // username into login string
+	sprintf(login, "USER %s\n", user);        // username into login string
 
 	if(send_msg(ftp, login))    { printf("Failed to send message with username\n"); return 1; }
 	if(receive_msg(ftp, login)) { printf("Failed to receive reply to username sent\n"); return 1; }
 
 	memset(login, 0, sizeof(login));            // cleaning login string
-	sprintf(login, "PASS %s\r\n", password);    // password into login string
+	sprintf(login, "PASS %s\n", password);    // password into login string
 
 	if(send_msg(ftp, login))    { printf("Failed to send message with password\n"); return 1; }
 	if(receive_msg(ftp, login)) { printf("Failed to receive reply to password sent\n"); return 1; }
@@ -202,18 +206,18 @@ int login(ftp_t* ftp, const char* user, const char* password)
 
 
 // -----------------------------------------------------------------
-int ftp_cd(ftp_t* ftp, const char* path) 
+int ftp_cwd(ftp_t* ftp, const char* path) 
 {
 	char cwd[MAX_SIZE];
 
-	sprintf(cwd, "CWD %s\r\n", path);
+	sprintf(cwd, "CWD %s\n", path);
 	if (send_msg(ftp, cwd)) {
-		printf("ERROR: Cannot send path to CWD.\n");
+		printf("Could not send CWD (send_msg)\n");
 		return 1;
 	}
 
 	if (receive_msg(ftp, cwd)) {
-		printf("ERROR: Cannot send path to change directory.\n");
+		printf("Could not send path to change directory (receive_msg)\n");
 		return 1;
 	}
 
@@ -224,7 +228,7 @@ int ftp_cd(ftp_t* ftp, const char* path)
 // -----------------------------------------------------------------
 int ftp_pasv(ftp_t* ftp)
 {
-	char pasv[MAX_SIZE] = "PASV\r\n";
+	char pasv[MAX_SIZE] = "PASV\n";
 	if (send_msg(ftp, pasv))    { printf("Failed to send passive mode msg\n"); return 1; }
 	if (receive_msg(ftp, pasv)) { printf("Could not enter passive mode\n"); return 1; }
 
@@ -259,7 +263,7 @@ int ftp_pasv(ftp_t* ftp)
 int ftp_retr(ftp_t* ftp, const char* filename) 
 {
 	char retr[MAX_SIZE];
-	sprintf(retr, "RETR %s\r\n", filename);
+	sprintf(retr, "RETR %s\n", filename);
 
 	if(send_msg(ftp, retr))    { printf("Could not send RETR message\n"); return 1; }
 	if(receive_msg(ftp, retr)) { printf("No information received\n"); return 1; }
@@ -296,20 +300,19 @@ int ftp_write_file(ftp_t* ftp, const char* filename)
 int ftp_disconnect(ftp_t* ftp)
 {
 	char disconnect[MAX_SIZE];
-
 	if (receive_msg(ftp, disconnect)) {
 		printf("Could not disconnect\n");
 		return 1;
 	}
 
-	sprintf(disconnect, "QUIT\r\n");
+	sprintf(disconnect, "QUIT\n");
 
 	if (send_msg(ftp, disconnect)) {
 		printf("Could not send QUIT message\n");
 		return 1;
 	}
 
-	if(ftp->control_socket_fd) close(ftp->control_socket_fd);
+	if(ftp->server_socket_fd) close(ftp->server_socket_fd);
 
 	return 0;
 }

@@ -30,7 +30,7 @@ typedef struct URL
 // ----------------------------------
 typedef struct FTP
 {
-    int control_socket_fd;
+    int server_socket_fd;
     int data_socket_fd;
 } ftp_t;
 
@@ -127,7 +127,7 @@ int login(ftp_t* ftp, const char* user, const char* password);
  * @param path path to the directory of the file
  * @return 0 upon success
  */
-int ftp_cd(ftp_t* ftp, const char* path) ;
+int ftp_cwd(ftp_t* ftp, const char* path) ;
 
 /** 
  * @brief enter passive (pasv) mode

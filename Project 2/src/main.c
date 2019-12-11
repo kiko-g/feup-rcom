@@ -13,13 +13,14 @@ int main(int argc, char** argv)
     if(url_parser(&url, argv[1])) return 1; //parse info given in argv[1] altering url variable
     
     //------------------- get IP with host --------------------
+    printf("\n=== Getting IP with host ===\n");
 	if ((h = gethostbyname(url.host)) == NULL) {
 		herror("gethostbyname");
 		return 1;
 	}
 	char* ip = inet_ntoa(*((struct in_addr *) h->h_addr_list[0]));
 	strcpy(url.ip, ip);
-    printf("\nHost: %s\nIP: %s\n", url.host, url.ip);
+    printf("IP: %s\n\n", url.ip);
     //---------------------------------------------------------
 
 	if(ftp_connect(url.port, url.ip, &ftp)) return 1;   //connect to the server
@@ -29,7 +30,7 @@ int main(int argc, char** argv)
         return 1;
     }
     //---------------------------------------------------------
-	if (ftp_cd(&ftp, url.filepath)) {
+	if (ftp_cwd(&ftp, url.filepath)) {
 		printf("Couldn\'t change directory of the file (%s)\n", url.filename);
 		return 1;
 	}
