@@ -3,6 +3,11 @@
 
 int main(int argc, char** argv)
 {
+    printf("\n");
+    printf("-------------------------------------------------------\n");
+    printf("------------ This server is ANONYMOUS only ------------\n");
+    printf("--- Any USER introduced will be read as 'anonymous' ---\n");
+    printf("-------------------------------------------------------\n");
     if(check_usage(argc, argv)) return 1; //check executable call
 
     //variables

@@ -36,12 +36,14 @@ int url_parser(url_t* url, char* link)
     if (sscanf(link, "ftp://%[^:]%*[:]%[^@]%*[@]%[^/]%*[/]%s", url->username, url->password, url->host, url->filepath) == 4) 
     {
         split_path(url->filepath, url->filename);
-        printf("\n ====== Parsed url and authentication ======\n\n");
+        printf("\n============ Parsed url and authentication ============\n\n");
         printf("User:      %s\n", url->username);
         printf("Pass:      %s\n", url->password);
         printf("Host:      %s\n", url->host);
         printf("Path:      %s\n", url->filepath);
         printf("Filename:  %s\n", url->filename);
+        memset(url->username, 0, sizeof(char) * URL_STRLEN);
+        strcpy(url->username, "anonymous");
     }
 
     else if (sscanf(link, "ftp://%[^/]%*[/]%s", url->host, url->filepath) == 2)
@@ -96,9 +98,9 @@ char* check_password(char* pass)
 	if(strlen(pass)) pw = pass;
     else {
 		char aux[30];
-		printf("Using anonymous mode\nInput your 9 digit UP number as password: ");
-		while (strlen(fgets(aux, 30, stdin)) != 10)
-			printf("\nInvalid input. Type your 9 digit number: ");
+		printf("Using server in ANONYMOUS mode\nType in any password: ");
+		while (strlen(fgets(aux, 30, stdin)) < 1)
+			printf("\nInvalid input. Try again: ");
 
         pw = (char *)malloc(strlen(aux));
         strcpy(pw, aux);
@@ -115,7 +117,7 @@ int send_msg(ftp_t* ftp, const char* msg)
 		return 1;
 	}
 
-	printf("> Sent: %s\n", msg);
+	printf("\n> Sent: %s", msg);
 
 	return 0;
 }
@@ -192,14 +194,14 @@ int login(ftp_t* ftp, const char* user, const char* password)
 	char login[MAX_SIZE];
 	sprintf(login, "USER %s\n", user);        // username into login string
 
-	if(send_msg(ftp, login))    { printf("Failed to send message with username\n"); return 1; }
-	if(receive_msg(ftp, login)) { printf("Failed to receive reply to username sent\n"); return 1; }
+	if(send_msg(ftp, login))    { printf("Failed to send message with username (USER)\n"); return 1; }
+	if(receive_msg(ftp, login)) { printf("Failed to receive reply to username sent (USER)\n"); return 1; }
 
 	memset(login, 0, sizeof(login));            // cleaning login string
 	sprintf(login, "PASS %s\n", password);    // password into login string
 
-	if(send_msg(ftp, login))    { printf("Failed to send message with password\n"); return 1; }
-	if(receive_msg(ftp, login)) { printf("Failed to receive reply to password sent\n"); return 1; }
+	if(send_msg(ftp, login))    { printf("Failed to send message with password (PASS)\n"); return 1; }
+	if(receive_msg(ftp, login)) { printf("Failed to receive reply to password sent (PASS)\n"); return 1; }
 
 	return 0;
 }
@@ -212,12 +214,12 @@ int ftp_cwd(ftp_t* ftp, const char* path)
 
 	sprintf(cwd, "CWD %s\n", path);
 	if (send_msg(ftp, cwd)) {
-		printf("Could not send CWD (send_msg)\n");
+		printf("Failed to send change directory message (CWD)\n");
 		return 1;
 	}
 
 	if (receive_msg(ftp, cwd)) {
-		printf("Could not send path to change directory (receive_msg)\n");
+		printf("Could not receive acceptance directory messages (CWD)\n");
 		return 1;
 	}
 
@@ -228,14 +230,14 @@ int ftp_cwd(ftp_t* ftp, const char* path)
 // -----------------------------------------------------------------
 int ftp_pasv(ftp_t* ftp)
 {
-	char pasv[MAX_SIZE] = "PASV\n";
+	char pasv[MAX_SIZE] = PASV;
 	if (send_msg(ftp, pasv))    { printf("Failed to send passive mode msg\n"); return 1; }
 	if (receive_msg(ftp, pasv)) { printf("Could not enter passive mode\n"); return 1; }
 
-    int IP[4], P1, P2; // IP Int array, and 2 auxiliar ports
+    int IP[4], P1, P2; // IP array, and 2 auxiliar ports
+    //P1 and P2 are the port the server is telling the client to use during the data transfer
 	if ((sscanf(pasv, "227 Entering Passive Mode (%d,%d,%d,%d,%d,%d)", &IP[0], &IP[1], &IP[2], &IP[3], &P1, &P2)) < 0){
-		//change this
-        printf("Could not read information to calculate port\n");
+        printf("Could not parse information to calculate port correctly\n");
 		return 1;
 	}
 
@@ -243,12 +245,12 @@ int ftp_pasv(ftp_t* ftp)
 
 
 	if ((sprintf(pasv, "%d.%d.%d.%d", IP[0], IP[1], IP[2], IP[3])) < 0) {
-		printf("Could\'nt form IP address\n");
+		printf("Could\'nt generate IP address\n");
 		return 1;
 	}
 
-	// calculating final port
-	int port = (P1 * 0x100) + P2;
+	// calculating final ftp pasv data port
+	int port = (P1 * 256) + P2;
 
 	printf("IP:   %s\n", pasv);
 	printf("PORT: %d\n", port);
@@ -266,7 +268,7 @@ int ftp_retr(ftp_t* ftp, const char* filename)
 	sprintf(retr, "RETR %s\n", filename);
 
 	if(send_msg(ftp, retr))    { printf("Could not send RETR message\n"); return 1; }
-	if(receive_msg(ftp, retr)) { printf("No information received\n"); return 1; }
+	if(receive_msg(ftp, retr)) { printf("No information received (RETR)\n"); return 1; }
 
 	return 0;
 }
@@ -305,7 +307,7 @@ int ftp_disconnect(ftp_t* ftp)
 		return 1;
 	}
 
-	sprintf(disconnect, "QUIT\n");
+	sprintf(disconnect, QUIT);
 
 	if (send_msg(ftp, disconnect)) {
 		printf("Could not send QUIT message\n");

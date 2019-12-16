@@ -16,6 +16,9 @@
 // ------------- MACROS -------------
 #define MAX_SIZE 1024
 #define URL_STRLEN 256
+// ----------- FTP MACROS -------------
+#define PASV "PASV\n"
+#define QUIT "QUIT\n"
 // ------------- TYPES --------------
 typedef struct URL
 {
