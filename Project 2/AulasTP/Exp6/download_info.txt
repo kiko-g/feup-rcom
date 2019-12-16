@@ -1,0 +1,12 @@
+2GB
+
+./download ftp://ftp.up.pt/pub/linuxmint/stable/19.2/linuxmint-19.2-cinnamon-64bit.iso
+
+3.1M
+
+./download ftp://ftp.up.pt/pub/raspbian/raspbian/pool/firmware/r/raspberrypi-firmware-nokernel/raspberrypi-bootloader-nokernel_1.20180328-1~nokernel1~jessie_armhf.deb
+
+700MB
+
+./download ftp://ftp.up.pt/pub/linuxmint/stable/7/LinuxMint-7-x64.iso
+

@@ -1,0 +1,215 @@
+flash:1-fjj-s (switch)
+flash:1-fjj-r (router)
+
+Tux 61 --> Porta 1 switch <-- Ligado a consola swith / router
+Tux 62 --> Porta 2 switch
+Tux 64 --> Porta 4, 8 switch
+
+Router GE 0/1 --> 6.1
+Router GE 0/0 --> Porta 12 switch
+
+Nota: Comandos com '>>' sao executados na consola do swith
+      Comandos com '»' sao executados na consola do router
+
+===================================================================================
+Part2 - Exp1
+
+Tux 64:
+
+ifconfig eth0 up
+ifconfig eth0 172.16.60.254/24
+route add -net 172.16.60.0/24 gw 172.16.60.1
+
+Tux 61:
+
+ifconfig eth0 up
+ifconfig eth0 172.16.60.1/24
+route add -net 172.16.60.0/24 gw 172.16.60.254
+===================================================================================
+Part2 - Exp2
+
+Tux 62:
+
+ifconfig eth0 up
+ifconfig eth0 172.16.61.1/24
+
+
+Tux 61:
+
+>> configure terminal
+>> vlan 60
+>> end
+
+>> configure terminal
+>> interface fastethernet 0/1
+>> switchport mode access
+>> switchport access vlan 60
+>> end
+
+>> configure terminal
+>> interface fastethernet 0/4
+>> switchport mode access
+>> switchport access vlan 60
+>> end
+
+>> configure terminal
+>> vlan 61
+>> end
+
+>> configure terminal
+>> interface fastethernet 0/2
+>> switchport mode access
+>> switchport access vlan 61
+>> end
+===================================================================================
+Part2 - Exp3
+
+Tux 64:
+
+ifconfig eth1 172.16.61.253/24
+echo 1 > /proc/sys/net/ipv4/ip_forward
+echo 0 >  /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+
+Tux 61:
+
+>>configure terminal
+>>interface fastethernet 0/4
+>>switchport mode access
+>>switchport access vlan 61
+>>end
+
+route add -net 172.16.61.0/24 gw 172.16.60.254
+
+Tux 62:
+
+route add -net 172.16.60.0/24 gw 172.16.61.253
+===================================================================================
+Part2 - Exp4
+
+Tux 61:
+
+»configure terminal
+»interface gigabitethernet 0/0
+»ip address 172.16.1.69 255.255.255.0
+»no shutdown
+»exit
+»exit
+
+
+»configure terminal
+»interface gigabitethernet 0/1
+»ip address 172.16.61.254 255.255.255.0
+»no shutdown
+»exit
+»exit
+
+route add default gw 172.16.60.254
+
+Tux 62:
+
+route add default gw 172.16.61.254
+
+
+Tux 64:
+
+route add default gw 172.16.61.254
+
+
+Tux 62:
+
+route add -net 172.16.60.0/24 gw 172.16.61.253
+
+
+Tux 61:
+
+>>configure terminal
+>>interface fastethernet 0/12
+>>switchport mode access
+>>switchport access vlan 61
+
+
+Rc:
+
+»ip route 172.16.60.0 255.255.255.0 172.16.61.253
+
+
+Tux 61:
+
+(Ping all interfaces)
+ping 172.16.60.254
+ping 172.16.61.253
+ping 172.16.61.1
+ping 172.16.61.254
+ping 172.16.1.69
+
+Tux 62:
+(So para fazer experiencias; Nao altera as configuracoes)
+
+echo 0 > /proc/sys/net/ipv4/conf/eth0/accept_redirects
+echo 0 > /proc/sys/net/ipv4/conf/all/accept_redirects
+route del -net 172.16.60.0/24
+traceroute 172.16.60.1
+
+(
+    => Tux62 n tem caminho ate ao Tux61 
+    => transmite ao default route (Router - 172.16.61.254)
+    => Router ja tem caminho para Tux61 
+    => envia para Tux61 => Tux61 responde a Tux62
+)
+
+route add -net 172.16.60.0/24 gw 172.16.61.253
+echo 1 > /proc/sys/net/ipv4/conf/eth0/accept_redirects
+echo 1 > /proc/sys/net/ipv4/conf/all/accept_redirects
+
+
+Tux 61:
+(So para fazer experiencias; Nao altera as configuracoes)
+
+traceroute 172.16.1.254 (IP do router do lab I321)
+(
+    => Tux 61 n tem caminho ate ao Router do lab
+    => transmite ao default route (Tux64 - 172.16.60.254)
+    => Tux 64 n tem caminho ate ao Router do lab
+    => transmite ao default route (Router - 172.16.61.254)
+    ?=> Router tem caminho ate ao router do lab?
+    => Envia para o proximos routes....
+)
+
+» conf t
+» interface gigabitethernet 0/0
+» ip address 172.16.61.254 255.255.255.0
+» no shutdown
+» ip nat inside
+» exit
+
+» interface gigabitethernet 0/1
+» ip address 172.16.1.69 255.255.255.0
+» no shutdown
+» ip nat outside
+» exit
+
+» ip nat pool ovrld 172.16.1.69 172.16.1.69 prefix 24
+» ip nat inside source list 1 pool ovrld overload
+
+» access-list 1 permit 172.16.60.0 0.0.0.7 (<== Ip's com ultimo digito maior que 7 nao tem acesso a internet)
+» access-list 1 permit 172.16.61.0 0.0.0.7
+
+» ip route 0.0.0.0 0.0.0.0 172.16.1.254
+» ip route 172.16.60.0 255.255.255.0 172.16.61.253
+» end
+
+
+Tux 61:
+
+echo -e "search netlab.fe.up.pt\nnameserver 172.16.1.1" > /etc/resolv.conf
+
+Tux 62:
+
+echo -e "search netlab.fe.up.pt\nnameserver 172.16.1.1" > /etc/resolv.conf
+
+Tux 64:
+
+echo -e "search netlab.fe.up.pt\nnameserver 172.16.1.1" > /etc/resolv.conf
+
+
+
