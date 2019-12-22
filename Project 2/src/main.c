@@ -42,7 +42,7 @@ int main(int argc, char** argv)
     //---------------------------------------------------------
 	if (ftp_pasv(&ftp)) {
 		printf("Couldn\'t enter in passive mode\n");
-		return -1;
+		return 1;
 	}
     //---------------------------------------------------------
 	ftp_retr(&ftp, url.filename);           //get file

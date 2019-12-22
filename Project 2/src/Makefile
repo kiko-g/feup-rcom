@@ -6,3 +6,15 @@ download:
 clean:
 	-rm download
 	-rm -f *.o
+
+
+# Try the following
+# --------------------------------------------------------------
+# make clean && make
+# ./download ftp://anyuser:anypass@ftp.up.pt/pub/CPAN/index.html
+# --------------------------------------------------------------
+# or
+# --------------------------------------------------------------
+# make clean && make
+# ./download ftp://ftp.up.pt/pub/CPAN/index.html
+# --------------------------------------------------------------

@@ -95,17 +95,19 @@ int split_path(char* path, char* file)
 char* check_password(char* pass)
 {
 	char* pw;
-	if(strlen(pass)) pw = pass;
+    //if it was specified in executable call no changes
+	if(strlen(pass)) pw = pass; 
+    //else type it now
     else {
-		char aux[30];
+		char aux[20];
 		printf("Using server in ANONYMOUS mode\nType in any password: ");
-		while (strlen(fgets(aux, 30, stdin)) < 1)
+		while (strlen(fgets(aux, 20, stdin)) < 1)
 			printf("\nInvalid input. Try again: ");
 
         pw = (char *)malloc(strlen(aux));
         strcpy(pw, aux);
 	}
-    return pw;
+    return pw; //final password
 }
 
 
@@ -113,7 +115,7 @@ char* check_password(char* pass)
 int send_msg(ftp_t* ftp, const char* msg) 
 {
 	if ((write(ftp->server_socket_fd, msg, strlen(msg))) <= 0) {
-		printf("Could not write (send_msg)\n");
+		printf("Couldn\'t write (send_msg)\n");
 		return 1;
 	}
 
@@ -155,7 +157,7 @@ int connect_to_data(int port, const char* ip)
 		return 1;
 	}
 
-	    // connect to the server
+	// connect to the server
 	if (connect(fd, (struct sockaddr*) &server_addr, sizeof(server_addr)) < 0) {
 		perror("connect()");
 		return 1;
@@ -172,7 +174,7 @@ int ftp_connect(int port, const char* ip, ftp_t* ftp)
 	char read_buf[MAX_SIZE];
 
 	if ((fd = connect_to_data(port, ip)) < 0) {
-		printf("Could not connect socket\n");
+		printf("Couldn\'t connect socket\n");
 		return 1;
 	}
 
@@ -180,7 +182,7 @@ int ftp_connect(int port, const char* ip, ftp_t* ftp)
 	ftp->data_socket_fd = 0;
 
 	if (receive_msg(ftp, read_buf)) {
-		printf("Could not read info\n");
+		printf("Couldn\'t read info\n");
 		return 1;
 	}
 
@@ -219,7 +221,7 @@ int ftp_cwd(ftp_t* ftp, const char* path)
 	}
 
 	if (receive_msg(ftp, cwd)) {
-		printf("Could not receive acceptance directory messages (CWD)\n");
+		printf("Couldn\'t receive acceptance directory messages (CWD)\n");
 		return 1;
 	}
 
@@ -232,12 +234,12 @@ int ftp_pasv(ftp_t* ftp)
 {
 	char pasv[MAX_SIZE] = PASV;
 	if (send_msg(ftp, pasv))    { printf("Failed to send passive mode msg\n"); return 1; }
-	if (receive_msg(ftp, pasv)) { printf("Could not enter passive mode\n"); return 1; }
+	if (receive_msg(ftp, pasv)) { printf("Couldn\'t enter passive mode\n"); return 1; }
 
     int IP[4], P1, P2; // IP array, and 2 auxiliar ports
     //P1 and P2 are the port the server is telling the client to use during the data transfer
 	if ((sscanf(pasv, "227 Entering Passive Mode (%d,%d,%d,%d,%d,%d)", &IP[0], &IP[1], &IP[2], &IP[3], &P1, &P2)) < 0){
-        printf("Could not parse information to calculate port correctly\n");
+        printf("Couldn\'t parse information to calculate port correctly\n");
 		return 1;
 	}
 
@@ -245,7 +247,7 @@ int ftp_pasv(ftp_t* ftp)
 
 
 	if ((sprintf(pasv, "%d.%d.%d.%d", IP[0], IP[1], IP[2], IP[3])) < 0) {
-		printf("Could\'nt generate IP address\n");
+		printf("Couldn\'t generate IP address\n");
 		return 1;
 	}
 
@@ -255,6 +257,7 @@ int ftp_pasv(ftp_t* ftp)
 	printf("IP:   %s\n", pasv);
 	printf("PORT: %d\n", port);
 
+    //if fd has invalid value abort ()
 	if ((ftp->data_socket_fd = connect_to_data(port, pasv)) < 0) return 1;
 
 	return 0;
@@ -267,7 +270,7 @@ int ftp_retr(ftp_t* ftp, const char* filename)
 	char retr[MAX_SIZE];
 	sprintf(retr, "RETR %s\n", filename);
 
-	if(send_msg(ftp, retr))    { printf("Could not send RETR message\n"); return 1; }
+	if(send_msg(ftp, retr))    { printf("Couldn\'t send RETR message\n"); return 1; }
 	if(receive_msg(ftp, retr)) { printf("No information received (RETR)\n"); return 1; }
 
 	return 0;
@@ -282,13 +285,13 @@ int ftp_write_file(ftp_t* ftp, const char* filename)
 	char buf[MAX_SIZE];
 
 	if (!(F = fopen(filename, "w"))) {
-		printf("Could not open file with filename: %s\n", filename);
+		printf("Couldn\'t open file with filename: %s\n", filename);
 		return 1;
 	}
 
 	while( (bytes = read(ftp->data_socket_fd, buf, sizeof(buf)) ) ) {
 		if(bytes < 0) { printf("Nothing read from data socket fd\n"); return 1; }
-		if((bytes=fwrite(buf, bytes, 1, F)) < 0) { printf("Failed to write data to file\n"); return 1; }
+		if((bytes = fwrite(buf, bytes, 1, F)) < 0) { printf("Failed to write data to file\n"); return 1; }
 	}
 
 	fclose(F);
@@ -303,14 +306,14 @@ int ftp_disconnect(ftp_t* ftp)
 {
 	char disconnect[MAX_SIZE];
 	if (receive_msg(ftp, disconnect)) {
-		printf("Could not disconnect\n");
+		printf("Couldn\'t receive disconnect message\n");
 		return 1;
 	}
 
 	sprintf(disconnect, QUIT);
 
 	if (send_msg(ftp, disconnect)) {
-		printf("Could not send QUIT message\n");
+		printf("Couldn\'t send QUIT message\n");
 		return 1;
 	}
 

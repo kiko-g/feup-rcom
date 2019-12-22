@@ -42,7 +42,7 @@ typedef struct FTP
 // -----------------------------------
 
 /**
- * @brief check executable call usage (must have 2 args (n should be 2))
+ * @brief tells the user how to run the executable
  * @param n number of arguments
  * @param s string provided in executable called
  * @return 0 upon success, 1 otherwise 
@@ -50,7 +50,7 @@ typedef struct FTP
 void print_usage(char* s);
 
 /** 
- * @brief check executable call usage (must have 2 args (n should be 2))
+ * @brief check executable call usage
  * @param n number of arguments
  * @param array of strings in executable call
  * @return 0 upon success, 1 otherwise 
@@ -58,66 +58,68 @@ void print_usage(char* s);
 int check_usage(int n, char** s);
 
 /** 
- * @brief parse initial information
- * @param argv string array in executable call
+ * @brief parse information given in executable call into url_t variable
+ * @param link string array in executable call
  * @return 0 upon success, 1 otherwise 
  */
 int url_parser(url_t* url, char* link);
 
 /** 
- * @brief check valid password
- * @param pass url password
+ * @brief splits a whole path into path to file and filename
+ * @param path initially path (ends up being just path to file)
+ * @param file initially path (ends up being just the filename)
  * @return 0 upon success
  */
 int split_path(char* path, char* file);
 
 /** 
- * @brief check valid password
- * @param pass url password
- * @return 0 upon success
+ * @brief check valid password (any is valid)
+ * @param pass password (value depends on executable call)
+ * @return final password (char* element)
  */
 char* check_password(char* pass);
 
 /** 
- * @brief send ftp message
- * @param server_addr
- * @param data
+ * @brief send ftp message to server
+ * @param ftp ftp struct element containing the File Descriptors
+ * @param msg message received 
  * @return 0 upon success, 1 otherwise 
  */
 int send_msg(ftp_t* ftp, const char* msg);
 
 /** 
- * @brief receive ftp message
- * @param server_addr
- * @param data
+ * @brief receive ftp message from server
+ * @param ftp ftp struct element containing the File Descriptors
+ * @param msg message sent
  * @return 0 upon success
  */
 int receive_msg(ftp_t* ftp, char* msg);
 
 /** 
- * @brief connect socket
- * @param ftp ftp struct containing the File Descritors
- * @return 0 upon success
+ * @brief connect socket to server
+ * @param port server address port
+ * @param ip IP address of the server
+ * @return integer fd (file descrtptor)
  */
 int connect_to_data(int port, const char* ip);
 
 /** 
- * @brief connect
- * @param ftp ftp struct containing the File Descritors
+ * @brief connects to server (220)
+ * @param ftp ftp struct element containing the File Descriptors
  * @return 0 upon success
  */
 int ftp_connect(int port, const char* ip, ftp_t* ftp);
 
 /** 
- * @brief disconnect from server
+ * @brief disconnects from server - asks for final message (226) and sends QUIT
  * @param ftp ftp struct containing the File Descriptors
  * @return 0 upon success
  */
 int ftp_disconnect(ftp_t* ftp);
 
 /** 
- * @brief 
- * @param ftp ftp struct containing the File Descritors
+ * @brief login using USER and PASS requests with the information previously parsed
+ * @param ftp ftp struct element containing the File Descriptors
  * @param user login username string
  * @param password login password
  * @return 0 upon success
@@ -125,7 +127,7 @@ int ftp_disconnect(ftp_t* ftp);
 int login(ftp_t* ftp, const char* user, const char* password);
 
 /** 
- * @brief change to directory of the file
+ * @brief sends a CWD request and tells the server the pathname prefix of the file we want to download
  * @param ftp struct containing the File Descriptors
  * @param path path to the directory of the file
  * @return 0 upon success
@@ -133,23 +135,23 @@ int login(ftp_t* ftp, const char* user, const char* password);
 int ftp_cwd(ftp_t* ftp, const char* path) ;
 
 /** 
- * @brief enter passive (pasv) mode
+ * @brief enter passive (pasv) mode - sends PASV request and asks the server to accept a data connection
  * @param ftp struct containing the File Descriptors
  * @return 0 upon success
  */
 int ftp_pasv(ftp_t* ftp);
 
 /** 
- * @brief 
- * @param ftp struct containing the File Descritors
+ * @brief sends RETR request and asks the server for the contents of the file specified in filename
+ * @param ftp struct element containing the File Descriptors
  * @param filename name of the file to be transfered
  * @return 0 upon success
  */
 int ftp_retr(ftp_t* ftp, const char* filename);
 
 /** 
- * @brief 
- * @param ftp ftp struct containing the File Descritors
+ * @brief writes the intended file specified in filename
+ * @param ftp ftp struct containing the File Descriptors
  * @param filename name of file to be downloaded
  * @return 0 upon success
  */
