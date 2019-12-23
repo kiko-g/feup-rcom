@@ -1,5 +1,5 @@
 #include "lib.h"
-
+int file_size = 0;
 // -----------------------------------------------------------------
 int check_usage(int argc, char** argv)
 {
@@ -69,11 +69,12 @@ int url_parser(url_t* url, char* link)
 // -----------------------------------------------------------------
 int split_path(char* path, char* file)
 {
-    strcpy(file, path);
-    size_t len = strlen(path);
-    const char* aux = path;
-    char final[len];
-    int pos = len-1;
+   strcpy(file, path);       
+   size_t len = strlen(path);
+   int pos = len-1;
+   char final[len];
+   const char* aux = path;   
+
     for(size_t i=0; i<len; i++) {
         if(path[pos] == '/') break;
         pos--;
@@ -129,19 +130,19 @@ int send_msg(ftp_t* ftp, const char* msg)
 int receive_msg(ftp_t* ftp, char* msg) 
 {
 	FILE* f = fdopen(ftp->server_socket_fd, "r");
+    memset(msg, 0, MAX_SIZE);
 
-	while(msg[0] < '1' || msg[0] > '5' || msg[3] != ' '){
+	while(msg[3] != ' ') {
 		memset(msg, 0, MAX_SIZE);
 		msg = fgets(msg, MAX_SIZE, f);
-		printf("> Received %s", msg);
-	} 
-
+		printf("> Received: %s", msg);
+	}
 	return 0;
 }
 
 
 // -----------------------------------------------------------------
-int connect_to_data(int port, const char* ip)
+int connect_socket(int port, const char* ip)
 {
 	int fd;
 	struct sockaddr_in server_addr;
@@ -151,7 +152,7 @@ int connect_to_data(int port, const char* ip)
 	server_addr.sin_addr.s_addr = inet_addr(ip);    //32 bit Internet address network byte ordered 
 	server_addr.sin_port = htons(port);             //server TCP port must be network byte ordered 
 
-	// open an TCP socket
+	// open a TCP socket
 	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("socket()");
 		return 1;
@@ -170,16 +171,12 @@ int connect_to_data(int port, const char* ip)
 // -----------------------------------------------------------------
 int ftp_connect(int port, const char* ip, ftp_t* ftp) 
 {
-	int fd;
 	char read_buf[MAX_SIZE];
 
-	if ((fd = connect_to_data(port, ip)) < 0) {
+	if ((ftp->server_socket_fd = connect_socket(port, ip)) < 0) {
 		printf("Couldn\'t connect socket\n");
 		return 1;
 	}
-
-	ftp->server_socket_fd = fd;
-	ftp->data_socket_fd = 0;
 
 	if (receive_msg(ftp, read_buf)) {
 		printf("Couldn\'t read info\n");
@@ -258,13 +255,38 @@ int ftp_pasv(ftp_t* ftp)
 	printf("PORT: %d\n", port);
 
     //if fd has invalid value abort ()
-	if ((ftp->data_socket_fd = connect_to_data(port, pasv)) < 0) return 1;
+	if ((ftp->data_socket_fd = connect_socket(port, pasv)) < 0) return 1;
 
 	return 0;
 }
 
 
 // -----------------------------------------------------------------
+void progress(char* s)
+{
+    int init_pos, final_pos;
+    for(int i=0; i<MAX_SIZE; ++i)
+        if(s[i]==' ' && s[i+1]=='b' && s[i+2]=='y' && s[i+3]=='t' && s[i+4]=='e' && s[i+5]=='s') {
+            final_pos = i-1;
+            break;
+        }
+
+    for(int i=final_pos; i > 0; --i)
+        if(s[i] == '(') {
+            init_pos = i+1;
+            break;
+        }
+    
+    char number[20];
+    for(int i=0; i<20; ++i) {
+        number[i] = s[init_pos+i];
+        if(init_pos+i == final_pos) break;
+    }
+    number[final_pos - init_pos + 1] = 0;
+
+    file_size = atoi(number);
+}
+
 int ftp_retr(ftp_t* ftp, const char* filename) 
 {
 	char retr[MAX_SIZE];
@@ -272,11 +294,10 @@ int ftp_retr(ftp_t* ftp, const char* filename)
 
 	if(send_msg(ftp, retr))    { printf("Couldn\'t send RETR message\n"); return 1; }
 	if(receive_msg(ftp, retr)) { printf("No information received (RETR)\n"); return 1; }
+    progress(retr);
 
 	return 0;
 }
-
-
 // -----------------------------------------------------------------
 int ftp_write_file(ftp_t* ftp, const char* filename) 
 {
@@ -321,7 +342,5 @@ int ftp_disconnect(ftp_t* ftp)
 
 	return 0;
 }
-
-// -----------------------------------------------------------------
 
 

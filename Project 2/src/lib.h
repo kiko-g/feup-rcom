@@ -101,7 +101,7 @@ int receive_msg(ftp_t* ftp, char* msg);
  * @param ip IP address of the server
  * @return integer fd (file descrtptor)
  */
-int connect_to_data(int port, const char* ip);
+int connect_socket(int port, const char* ip);
 
 /** 
  * @brief connects to server (220)
