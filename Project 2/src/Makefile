@@ -4,7 +4,7 @@ download:
 	gcc -Wall -o download ftp.c main.c -Wall -Wextra
 
 clean:
-	-rm download
+	-rm download index.html
 	-rm -f *.o
 
 

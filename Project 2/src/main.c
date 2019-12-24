@@ -28,26 +28,27 @@ int main(int argc, char** argv)
     printf("IP: %s\n\n", url.ip);
     //---------------------------------------------------------
 
-	if(ftp_connect(url.port, url.ip, &ftp)) return 1;   //connect to the server
-	strcpy(url.password, check_password(url.password)); //check password, alter it if need be
+	if(server_connect(url.port, url.ip, &ftp)) return 1;   //connect to the server
+	strcpy(url.password, check_password(url.password));    //check password, alter it if need be
     if(login(&ftp, url.username, url.password)) {
         printf("Couldn\'t login as user %s\n", url.username);
         return 1;
     }
+
     //---------------------------------------------------------
 	if (ftp_cwd(&ftp, url.filepath)) {
-		printf("Couldn\'t change directory of the file (%s)\n", url.filename);
+		printf("Couldn\'t change to the directory of the file (%s)\n", url.filename);
 		return 1;
 	}
     //---------------------------------------------------------
 	if (ftp_pasv(&ftp)) {
-		printf("Couldn\'t enter in passive mode\n");
+		printf("Couldn\'t enter passive mode\n");
 		return 1;
 	}
     //---------------------------------------------------------
-	ftp_retr(&ftp, url.filename);           //get file
-	ftp_write_file(&ftp, url.filename);     //download file
-	ftp_disconnect(&ftp);                   //exit
-
+	ftp_retr(&ftp, url.filename);       //get file
+	write_file(&ftp, url.filename);     //download file
+	disconnect(&ftp);                   //exit
+    //---------------------------------------------------------
     return 0;
 }

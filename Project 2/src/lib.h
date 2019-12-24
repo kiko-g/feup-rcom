@@ -108,14 +108,14 @@ int connect_socket(int port, const char* ip);
  * @param ftp ftp struct element containing the File Descriptors
  * @return 0 upon success
  */
-int ftp_connect(int port, const char* ip, ftp_t* ftp);
+int server_connect(int port, const char* ip, ftp_t* ftp);
 
 /** 
  * @brief disconnects from server - asks for final message (226) and sends QUIT
  * @param ftp ftp struct containing the File Descriptors
  * @return 0 upon success
  */
-int ftp_disconnect(ftp_t* ftp);
+int disconnect(ftp_t* ftp);
 
 /** 
  * @brief login using USER and PASS requests with the information previously parsed
@@ -155,4 +155,4 @@ int ftp_retr(ftp_t* ftp, const char* filename);
  * @param filename name of file to be downloaded
  * @return 0 upon success
  */
-int ftp_write_file(ftp_t* ftp, const char* filename);
+int write_file(ftp_t* ftp, const char* filename);

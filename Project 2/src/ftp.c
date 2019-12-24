@@ -26,13 +26,6 @@ void print_usage(char* s)
 int url_parser(url_t* url, char* link)
 {
 	url->port = 21;
-	memset(url->username, 0, sizeof(char) * URL_STRLEN);
-	memset(url->password, 0, sizeof(char) * URL_STRLEN);
-    memset(url->ip,       0, sizeof(char) * URL_STRLEN);
-	memset(url->host,     0, sizeof(char) * URL_STRLEN);
-	memset(url->filepath, 0, sizeof(char) * URL_STRLEN);
-	memset(url->filename, 0, sizeof(char) * URL_STRLEN);
-
     if (sscanf(link, "ftp://%[^:]%*[:]%[^@]%*[@]%[^/]%*[/]%s", url->username, url->password, url->host, url->filepath) == 4) 
     {
         split_path(url->filepath, url->filename);
@@ -169,7 +162,7 @@ int connect_socket(int port, const char* ip)
 
 
 // -----------------------------------------------------------------
-int ftp_connect(int port, const char* ip, ftp_t* ftp) 
+int server_connect(int port, const char* ip, ftp_t* ftp) 
 {
 	char read_buf[MAX_SIZE];
 
@@ -299,7 +292,7 @@ int ftp_retr(ftp_t* ftp, const char* filename)
 	return 0;
 }
 // -----------------------------------------------------------------
-int ftp_write_file(ftp_t* ftp, const char* filename) 
+int write_file(ftp_t* ftp, const char* filename) 
 {
 	FILE* F;
 	int bytes;
@@ -323,7 +316,7 @@ int ftp_write_file(ftp_t* ftp, const char* filename)
 
 
 // -----------------------------------------------------------------
-int ftp_disconnect(ftp_t* ftp)
+int disconnect(ftp_t* ftp)
 {
 	char disconnect[MAX_SIZE];
 	if (receive_msg(ftp, disconnect)) {
