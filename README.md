@@ -7,7 +7,7 @@ Transfering files between two computers using a serial port\
 Computer network configuration (in lab), development of a FTP protocol based download application.  
 
 
-<span style="color:#ff6961"> Practical works of:\ </span>
+Practical works of:\
 > [Francisco Gonçalves](github.com/kiko-g)\
 > [José Martins](github.com/zepedr0)\
 > [Pedro Baptista](github.com/PedroBaptista3622)
